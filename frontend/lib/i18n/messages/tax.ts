@@ -1,0 +1,103 @@
+// Tax declarations: DGI / CNSS / FSP remittances and the état nominatif.
+const fr = {
+  title: "Déclarations",
+  due: (date: string) => `échéance le ${date}`,
+  daysLeft: (n: number) => `(${n} jour${n > 1 ? "s" : ""} restant${n > 1 ? "s" : ""})`,
+  ifu: "IFU",
+  cnssEmployerNo: "N° employeur CNSS",
+  addIds: "Ajoutez votre IFU et votre numéro employeur CNSS dans les Paramètres",
+  period: "Période de paie",
+  exportCsv: "État nominatif (CSV)",
+  print: "Imprimer",
+  exported: "État nominatif exporté.",
+  incompleteTitle: "Déclaration incomplète.",
+  incomplete: (n: number, label: string, names: string) =>
+    `${n} salarié${n > 1 ? "s" : ""} actif${n > 1 ? "s" : ""} sans bulletin calculé pour ${label} : ${names}. Calculez la paie du mois avant de déclarer.`,
+  authority: {
+    DGI: "IUTS retenu + TPA",
+    CNSS: "Sécurité sociale, part salariale + patronale",
+    FSP: "Fonds de Soutien Patriotique",
+  },
+  breakdown: {
+    iuts: "IUTS retenu",
+    tpa: "TPA 3 % (employeur)",
+    cnssEmployee: "Part salariale 5,5 %",
+    cnssEmployer: "Part patronale 16 %",
+    cnssBase: "Assiette cotisable",
+    fsp: "1 % des salaires nets",
+  },
+  filed: "Déclaré",
+  toFile: "À déclarer",
+  drift: (filed: string, now: string) =>
+    `La paie a changé après la déclaration : ${filed} déclarés, ${now} aujourd'hui. Rouvrez et déposez une rectification.`,
+  ref: "Réf.",
+  reopen: "Rouvrir",
+  referencePh: "N° de quittance (facultatif)",
+  confirm: "Confirmer",
+  blockedHint: "Calculez d'abord tous les bulletins",
+  markFiled: "Marquer comme déclaré",
+  statement: "État nominatif",
+  statementHint: (label: string) => `Détail par salarié de chaque montant déclaré pour ${label}`,
+  totalDue: "Total dû",
+  noLines: "Aucun bulletin calculé pour cette période.",
+  employee: "Salarié",
+  total: (n: number) => `Total (${n})`,
+  columns: { gross: "Brut", cnssBase: "Assiette CNSS", cnssEmployee: "CNSS 5,5 %", cnssEmployer: "CNSS 16 %", iuts: "IUTS", tpa: "TPA 3 %", fsp: "FSP 1 %" },
+  footnote:
+    "Montants issus des bulletins enregistrés, calculés par le moteur de conformité FasoPay. Échéance supposée au 15 du mois " +
+    "suivant ; confirmez les modalités de versement et les échéances avec votre expert-comptable.",
+  noPayroll: "Aucune paie pour l'instant",
+  noPayrollHint: "Calculez une paie mensuelle pour préparer vos premières déclarations.",
+};
+
+const en: typeof fr = {
+  title: "Tax Declarations",
+  due: (date: string) => `due ${date}`,
+  daysLeft: (n: number) => `(${n} day${n === 1 ? "" : "s"} left)`,
+  ifu: "IFU",
+  cnssEmployerNo: "CNSS employer no.",
+  addIds: "Add your IFU and CNSS employer number in Settings",
+  period: "Payroll period",
+  exportCsv: "État nominatif (CSV)",
+  print: "Print",
+  exported: "État nominatif exported.",
+  incompleteTitle: "Declaration incomplete.",
+  incomplete: (n: number, label: string, names: string) =>
+    `${n} active employee${n === 1 ? " has" : "s have"} no calculated payslip for ${label}: ${names}. Run the monthly payroll before filing.`,
+  authority: {
+    DGI: "IUTS withheld + TPA",
+    CNSS: "Social security, employee + employer",
+    FSP: "Fonds de Soutien Patriotique",
+  },
+  breakdown: {
+    iuts: "IUTS withheld",
+    tpa: "TPA 3% (employer)",
+    cnssEmployee: "Employee 5.5%",
+    cnssEmployer: "Employer 16%",
+    cnssBase: "Contributable base",
+    fsp: "1% of net salaries",
+  },
+  filed: "Filed",
+  toFile: "To file",
+  drift: (filed: string, now: string) => `Payroll changed after filing: filed ${filed}, now ${now}. Reopen and file a correction.`,
+  ref: "Ref.",
+  reopen: "Reopen",
+  referencePh: "Receipt / quittance no. (optional)",
+  confirm: "Confirm",
+  blockedHint: "Calculate every payslip first",
+  markFiled: "Mark as filed",
+  statement: "État nominatif",
+  statementHint: (label: string) => `Per-employee detail of every amount declared for ${label}`,
+  totalDue: "Total due",
+  noLines: "No calculated payslips for this period yet.",
+  employee: "Employee",
+  total: (n: number) => `Total (${n})`,
+  columns: { gross: "Gross", cnssBase: "CNSS base", cnssEmployee: "CNSS 5.5%", cnssEmployer: "CNSS 16%", iuts: "IUTS", tpa: "TPA 3%", fsp: "FSP 1%" },
+  footnote:
+    "Amounts come from saved payslips computed by the FasoPay compliance engine. Deadline assumed on the 15th of the " +
+    "following month; confirm remittance channels and due dates with your expert-comptable.",
+  noPayroll: "No payroll yet",
+  noPayrollHint: "Run a monthly payroll to prepare your first declarations.",
+};
+
+export default { fr, en };

@@ -1,0 +1,5 @@
+# Keep LF line endings everywhere, including Windows checkouts: shell scripts, Dockerfiles and
+# migrations run on Linux servers, and CRLF breaks them (e.g. "/bin/sh^M: bad interpreter").
+* text=auto eol=lf
+*.png binary
+*.pdf binary

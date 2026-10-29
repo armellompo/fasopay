@@ -1,0 +1,4 @@
+# Runtime dependencies, pinned to the versions the test suite passes on.
+fastapi==0.142.2
+pydantic==2.13.4
+uvicorn[standard]==0.54.0

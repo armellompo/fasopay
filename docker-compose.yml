@@ -1,0 +1,78 @@
+# FasoPay production stack for a single server.
+#   docker compose up -d --build
+# Only Caddy is published (80/443). PostgreSQL and the compliance engine stay on the internal network.
+name: fasopay
+
+x-database-url: &database-url postgresql://fasopay:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/fasopay
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fasopay
+      POSTGRES_USER: fasopay
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fasopay -d fasopay"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  engine:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      ENGINE_CORS_ORIGINS: ""
+
+  # Applies pending Prisma migrations, then exits. Runs on every `up` before the web app starts.
+  migrate:
+    build:
+      context: ./frontend
+      target: migrate
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: ./frontend
+      target: runner
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *database-url
+      PAYROLL_ENGINE_URL: http://engine:8000
+    depends_on:
+      db:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

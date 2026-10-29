@@ -1,0 +1,29 @@
+import "server-only";
+
+// In-memory throttle on failed logins, per email. Good for a single server; move to Redis or the
+// database before running several instances.
+const MAX_FAILURES = 5;
+const WINDOW_MS = 15 * 60_000;
+
+const failures = new Map<string, { count: number; resetAt: number }>();
+
+export function isLocked(key: string): boolean {
+  const entry = failures.get(key);
+  if (!entry) return false;
+  if (entry.resetAt < Date.now()) {
+    failures.delete(key);
+    return false;
+  }
+  return entry.count >= MAX_FAILURES;
+}
+
+export function recordFailure(key: string): void {
+  const now = Date.now();
+  const entry = failures.get(key);
+  if (!entry || entry.resetAt < now) failures.set(key, { count: 1, resetAt: now + WINDOW_MS });
+  else entry.count += 1;
+}
+
+export function clearFailures(key: string): void {
+  failures.delete(key);
+}

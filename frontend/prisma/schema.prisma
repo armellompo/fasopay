@@ -1,0 +1,190 @@
+// FasoPay data model. All money columns are whole FCFA (no subunit), stored as Int.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentMethod {
+  ORANGE_MONEY
+  MOOV_MONEY
+  WAVE
+  BANK_TRANSFER
+}
+
+enum MemberRole {
+  OWNER // everything, including granting Owner
+  ADMIN // everything except Owner-level team changes
+  ACCOUNTANT // expert-comptable: view, calculate, declare, export; no pay edits or payouts
+}
+
+enum TaxAuthority {
+  DGI // IUTS withheld + TPA
+  CNSS // employee 5.5% + employer 16%
+  FSP // Fonds de Soutien Patriotique 1%
+}
+
+enum PayslipStatus {
+  DRAFT
+  CALCULATED
+  PAID
+}
+
+model Company {
+  id                 String       @id @default(cuid())
+  name               String
+  city               String
+  legalForm          String? // SARL, SA, SAS, EI…
+  ifu                String? // Identifiant Financier Unique (DGI)
+  rccm               String? // Registre du Commerce et du Crédit Mobilier
+  cnssEmployerNumber String? // numéro employeur CNSS
+  address            String?
+  phone              String?
+  email              String?
+  employees          Employee[]
+  runs               PayrollRun[]
+  members            Membership[]
+  invitations        Invitation[]
+  createdAt          DateTime     @default(now())
+}
+
+/// Pay elements fed to the compliance engine (POST /api/v1/payroll/calculate).
+model Employee {
+  id                 String        @id @default(cuid())
+  companyId          String
+  company            Company       @relation(fields: [companyId], references: [id])
+  code               String // e.g. EMP-001, sent to the engine as employee_id
+  fullName           String
+  role               String
+  department         String
+  baseSalary         Int
+  bonuses            Int           @default(0)
+  housingAllowance   Int           @default(0)
+  transportAllowance Int           @default(0)
+  functionAllowance  Int           @default(0)
+  otherAllowance     Int           @default(0)
+  dependents         Int           @default(0)
+  isExecutive        Boolean       @default(false)
+  paymentMethod      PaymentMethod
+  mobileMoneyNumber  String?
+  cnssNumber         String? // employee CNSS registration (n° d\'immatriculation), printed on pay slips
+  active             Boolean       @default(true)
+  payslips           Payslip[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@unique([companyId, code])
+}
+
+/// One monthly payroll per company, period formatted "YYYY-MM".
+model PayrollRun {
+  id        String      @id @default(cuid())
+  companyId String
+  company   Company     @relation(fields: [companyId], references: [id])
+  period    String
+  payslips  Payslip[]
+  filings   TaxFiling[]
+  createdAt DateTime    @default(now())
+
+  @@unique([companyId, period])
+}
+
+/// Engine output for one employee in one run. Figures are null while DRAFT.
+model Payslip {
+  id                String        @id @default(cuid())
+  runId             String
+  run               PayrollRun    @relation(fields: [runId], references: [id])
+  employeeId        String
+  employee          Employee      @relation(fields: [employeeId], references: [id])
+  status            PayslipStatus @default(DRAFT)
+  grossSalary       Int?
+  cnssEmployee      Int?
+  iuts              Int?
+  fsp               Int?
+  totalDeductions   Int?
+  netSalary         Int?
+  cnssEmployer      Int?
+  tpa               Int?
+  totalEmployerCost Int?
+  /// Full engine response, kept for audit (DGI/CNSS controls).
+  engineResult      Json?
+  /// Employee identity and pay elements as they were when calculated, so a pay slip always
+  /// reprints the same even after the employee record changes. See PayslipSnapshot.
+  snapshot          Json?
+  calculatedAt      DateTime?
+  paidAt            DateTime?
+
+  @@unique([runId, employeeId])
+}
+
+/// Records that a period's remittance to one authority was declared and paid.
+model TaxFiling {
+  id        String       @id @default(cuid())
+  runId     String
+  run       PayrollRun   @relation(fields: [runId], references: [id])
+  authority TaxAuthority
+  amount    Int // total declared, frozen at filing time
+  reference String? // receipt / quittance number
+  filedAt   DateTime     @default(now())
+
+  @@unique([runId, authority])
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique // stored lowercase
+  name         String
+  passwordHash String // scrypt, see lib/auth/password.ts
+  memberships  Membership[]
+  sessions     Session[]
+  invitesSent  Invitation[]
+  createdAt    DateTime     @default(now())
+}
+
+/// Which companies a user can access. Accounting firms hold one membership per client company.
+model Membership {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      MemberRole @default(OWNER)
+  createdAt DateTime   @default(now())
+
+  @@unique([userId, companyId])
+}
+
+/// Server-side session. The cookie holds a random token; only its SHA-256 hash is stored.
+model Session {
+  id              String   @id @default(cuid())
+  tokenHash       String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeCompanyId String?
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// A pending invite to join a company. The link carries a random token; only its hash is stored.
+/// Accepted invites are kept for the audit trail; revoked ones are deleted.
+model Invitation {
+  id          String     @id @default(cuid())
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email       String // lowercase; the accepting account must use this email
+  role        MemberRole
+  tokenHash   String     @unique
+  invitedById String
+  invitedBy   User       @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([companyId])
+}
