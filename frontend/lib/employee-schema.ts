@@ -9,7 +9,7 @@ type Validation = Dict["server"]["validation"];
 // Form fields arrive as strings; accept "250 000" or "250,000" and store whole francs.
 const fcfa = (v: Validation, label: string, { min = 0, max = 100_000_000 } = {}) =>
   z.preprocess(
-    (x) => (typeof x === "string" ? x.replace(/[\s  ,]/g, "") || "0" : x),
+    (x) => (typeof x === "string" ? x.replace(/[\s\u00a0\u202f,]/g, "") || "0" : x),
     z.coerce
       .number({ invalid_type_error: v.notNumber(label) })
       .int(v.wholeFcfa(label))
@@ -17,10 +17,10 @@ const fcfa = (v: Validation, label: string, { min = 0, max = 100_000_000 } = {})
       .max(max, v.tooLarge(label)),
   );
 
-/** Burkina numbers: +226 then 8 digits. Spaces and the 00226 prefix are tolerated. */
+/** Burkina numbers: +226 then 8 digits. Spaces, the 00226 prefix and a bare 226 prefix (as Excel stores it) are tolerated. */
 export const BF_PHONE = /^\+226\d{8}$/;
 export function normalizePhone(raw: string): string {
-  const digits = raw.replace(/[\s.-]/g, "").replace(/^00226/, "+226");
+  const digits = raw.replace(/[\s.()-]/g, "").replace(/^00226/, "+226").replace(/^226(\d{8})$/, "+226$1");
   return /^\d{8}$/.test(digits) ? `+226${digits}` : digits;
 }
 

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { calculatePayroll, PayrollApiError } from "./api";
 import { authorize } from "./auth/authorize";
 import { prisma } from "./db";
+import { codeAllocator } from "./employee-codes";
 import { getT } from "./i18n/server";
 import { parseEmployeeForm, type FieldErrors } from "./employee-schema";
 import { currentRun } from "./payroll-service";
@@ -33,13 +34,6 @@ function revalidate() {
   revalidatePath("/employees");
 }
 
-/** Next free EMP-### code for the company. */
-async function nextCode(companyId: string): Promise<string> {
-  const codes = await prisma.employee.findMany({ where: { companyId }, select: { code: true } });
-  const max = codes.reduce((m, { code }) => Math.max(m, Number(code.replace(/\D/g, "")) || 0), 0);
-  return `EMP-${String(max + 1).padStart(3, "0")}`;
-}
-
 export async function saveEmployee(
   employeeId: string | null,
   _prev: EmployeeFormState,
@@ -54,7 +48,7 @@ export async function saveEmployee(
   if (!parsed.ok) return { status: "error", message: t.server.fixFields, errors: parsed.errors };
 
   if (!employeeId) {
-    const code = await nextCode(company.id);
+    const code = (await codeAllocator(company.id))();
     await prisma.employee.create({ data: { ...parsed.data, code, companyId: company.id } });
     revalidate();
     return { status: "saved", message: t.server.employeeAdded(parsed.data.fullName, code) };

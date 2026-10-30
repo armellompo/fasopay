@@ -5,8 +5,11 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   experimental: {
-    // react-pdf ships its own font/layout engines; load it from node_modules instead of bundling it.
-    serverComponentsExternalPackages: ["@react-pdf/renderer"],
+    // react-pdf ships its own font/layout engines and exceljs relies on Node streams: load both from
+    // node_modules instead of bundling them.
+    serverComponentsExternalPackages: ["@react-pdf/renderer", "exceljs"],
+    // Spreadsheet uploads for employee import (the parser itself caps files at 2 MB).
+    serverActions: { bodySizeLimit: "3mb" },
     // pdfkit loads its built-in font metrics (Helvetica…) through a computed require that the
     // standalone tracer can't follow, so ship them explicitly with the pay slip routes.
     outputFileTracingIncludes: {

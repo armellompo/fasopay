@@ -28,7 +28,7 @@ const AMOUNT_FIELDS = [
 
 type AmountField = (typeof AMOUNT_FIELDS)[number][0];
 
-const toNumber = (v: FormDataEntryValue | null) => Number(String(v ?? "").replace(/[\s  ,]/g, "")) || 0;
+const toNumber = (v: FormDataEntryValue | null) => Number(String(v ?? "").replace(/[\s\u00a0\u202f,]/g, "")) || 0;
 
 interface EmployeeFormProps {
   employee: EmployeeRecord | null;

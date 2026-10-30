@@ -1,6 +1,7 @@
 "use client";
 
-import { Pencil, Plus, Search, UserX, X } from "lucide-react";
+import { FileSpreadsheet, Pencil, Plus, Search, UserX, X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { useT } from "@/components/I18nProvider";
@@ -105,6 +106,14 @@ export function EmployeesView({ employees }: { employees: EmployeeRecord[] }) {
           </p>
         </div>
         {canManage ? (
+        <div className="flex flex-col gap-2 sm:flex-row">
+        <Link
+          href="/employees/import"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          {t.import.button}
+        </Link>
         <button
           onClick={() => setEditing({ mode: "new" })}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
@@ -112,6 +121,7 @@ export function EmployeesView({ employees }: { employees: EmployeeRecord[] }) {
           <Plus className="h-4 w-4" />
           {te.add}
         </button>
+        </div>
         ) : (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">{t.common.viewOnly}</span>
         )}

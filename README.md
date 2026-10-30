@@ -80,6 +80,11 @@ engine's full response for audits. Production: point `DATABASE_URL` at a managed
 - `/employees` — add, edit, deactivate employees (`lib/employee-actions.ts`, validated by `lib/employee-schema.ts`).
   "Preview payslip" runs the form through the engine without saving. Changing pay on a Calculated
   employee sends this month's payslip back to Draft; Paid payslips are never touched.
+- Excel import (`/employees/import`): download the template or upload your own .xlsx / .csv (French Excel's
+  semicolon, Windows-1252 CSV works). Column names are matched in French or English (`lib/import/columns.ts`),
+  amounts like "200 000", "200.000" or "200 000 FCFA" are read correctly and real decimals are rejected,
+  every row goes through the employee form's validation, and duplicates (already registered or repeated in
+  the file) are flagged. A preview shows what will be imported; only valid rows are created, all at once.
 - `/runs` — one payroll run per month (`lib/runs-service.ts`, `lib/run-actions.ts`). Open the next month
   (only once the current one has no drafts), calculate, export the Mobile Money bulk file per operator
   (with phone numbers), then mark payslips as paid after the transfer. Paid payslips are final.

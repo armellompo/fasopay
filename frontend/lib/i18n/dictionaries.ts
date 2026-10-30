@@ -4,13 +4,14 @@ import auth from "./messages/auth";
 import common from "./messages/common";
 import dashboard from "./messages/dashboard";
 import employees from "./messages/employees";
+import importMessages from "./messages/import";
 import runs from "./messages/runs";
 import server from "./messages/server";
 import settings from "./messages/settings";
 import shell from "./messages/shell";
 import tax from "./messages/tax";
 
-const sections = { common, shell, dashboard, employees, runs, tax, settings, auth, server };
+const sections = { common, shell, dashboard, employees, import: importMessages, runs, tax, settings, auth, server };
 
 type Sections = typeof sections;
 type Lang<L extends "fr" | "en"> = { [S in keyof Sections]: Sections[S][L] };

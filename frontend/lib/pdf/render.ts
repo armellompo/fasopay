@@ -16,7 +16,7 @@ export function renderPayslips(slips: PayslipDocData[], title: string): Promise<
 export function slug(text: string): string {
   return text
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
