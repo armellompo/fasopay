@@ -258,6 +258,7 @@ function RemittanceCard({ r, period, blocked, breakdown, onDone }: CardProps) {
           <div>
             <h2 className="text-sm font-semibold">{title}</h2>
             <p className="text-xs text-slate-500">{subtitle}</p>
+            <p className="text-xs text-slate-500">{t.due(formatDate(r.deadline, locale, { day: "numeric", month: "long" }))}</p>
           </div>
         </div>
         {r.filing ? (

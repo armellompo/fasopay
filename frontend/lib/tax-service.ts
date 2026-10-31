@@ -22,6 +22,8 @@ export interface TaxLine {
 export interface Remittance {
   authority: TaxAuthority;
   amount: number;
+  /** ISO date. */
+  deadline: string;
   filing: { amount: number; reference: string | null; filedAt: string } | null;
 }
 
@@ -31,6 +33,7 @@ export interface TaxDeclaration {
   cnssEmployerNumber: string | null;
   periods: string[];
   period: string;
+  /** Earliest remittance deadline, ISO date. */
   deadline: string;
   lines: TaxLine[];
   totals: Omit<TaxLine, "code" | "name">;
@@ -109,6 +112,7 @@ export async function getTaxDeclaration(requested?: string): Promise<TaxDeclarat
     return {
       authority,
       amount: due[authority],
+      deadline: filingDeadline(run.period, authority),
       filing: f ? { amount: f.amount, reference: f.reference, filedAt: f.filedAt.toISOString() } : null,
     };
   });

@@ -44,8 +44,9 @@ const fr = {
   total: (n: number) => `Total (${n})`,
   columns: { gross: "Brut", cnssBase: "Assiette CNSS", cnssEmployee: "CNSS 5,5 %", cnssEmployer: "CNSS 16 %", iuts: "IUTS", tpa: "TPA 3 %", fsp: "FSP 1 %" },
   footnote:
-    "Montants issus des bulletins enregistrés, calculés par le moteur de conformité FasoPay. Échéance supposée au 15 du mois " +
-    "suivant ; confirmez les modalités de versement et les échéances avec votre expert-comptable.",
+    "Montants issus des bulletins enregistrés, calculés par le moteur de conformité FasoPay. IUTS, TPA et FSP sont à verser " +
+    "au plus tard le 10 du mois suivant (CGI art. 116 et 230). L'échéance CNSS, fixée par décret, est supposée au 15 : " +
+    "confirmez-la avec votre expert-comptable.",
   noPayroll: "Aucune paie pour l'instant",
   noPayrollHint: "Calculez une paie mensuelle pour préparer vos premières déclarations.",
 };
@@ -94,8 +95,9 @@ const en: typeof fr = {
   total: (n: number) => `Total (${n})`,
   columns: { gross: "Gross", cnssBase: "CNSS base", cnssEmployee: "CNSS 5.5%", cnssEmployer: "CNSS 16%", iuts: "IUTS", tpa: "TPA 3%", fsp: "FSP 1%" },
   footnote:
-    "Amounts come from saved payslips computed by the FasoPay compliance engine. Deadline assumed on the 15th of the " +
-    "following month; confirm remittance channels and due dates with your expert-comptable.",
+    "Amounts come from saved payslips computed by the FasoPay compliance engine. IUTS, TPA and FSP are due by the 10th of " +
+    "the following month (CGI art. 116 and 230). The CNSS due date, set by decree, is assumed to be the 15th: confirm it " +
+    "with your expert-comptable.",
   noPayroll: "No payroll yet",
   noPayrollHint: "Run a monthly payroll to prepare your first declarations.",
 };

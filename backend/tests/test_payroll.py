@@ -31,6 +31,22 @@ def test_taxable_base_truncated_to_hundred() -> None:
     assert engine.iuts_taxable_base(D(405_000), D(75_000), D(22_275), D(75_000)) == D(232_700)
 
 
+def test_exemption_shares_apply_to_gross_less_cnss() -> None:
+    # CGI art. 106: shares of (base + allowances − employee CNSS), bonuses excluded.
+    reference = engine.exemption_reference(D(300_000), D(85_000), D(22_275))
+    assert reference == D(362_725)
+    # housing min(60 000, 72 545, 75 000) + transport min(25 000, 18 136.25, 30 000)
+    assert engine.exempt_allowances(reference, D(60_000), D(25_000), D(0)) == D(78_136)
+    # the absolute caps still bind: function min(60 000, 40 300, 50 000)
+    assert engine.exempt_allowances(D(806_000), D(150_000), D(40_000), D(60_000)) == D(145_300)
+
+
+def test_pension_deduction_capped_at_8_percent_of_base() -> None:
+    # CGI art. 111: 5.5% of a 210 000 gross is 11 550, but only 8% of the 100 000 base is deductible.
+    assert engine.pension_deduction(D(11_550), D(100_000)) == D(8_000)
+    assert engine.pension_deduction(D(22_275), D(300_000)) == D(22_275)
+
+
 def test_round_half_up() -> None:
     assert engine.round_fcfa(D("10.5")) == 11
     assert engine.round_fcfa(D("10.49")) == 10
@@ -48,9 +64,12 @@ def test_full_payslip_hand_checked() -> None:
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["gross_salary"] == 405_000
-    assert body["employee_deductions"] == {"cnss": 22_275, "iuts": 32_108, "fsp": 3_506, "total": 57_889}
-    assert body["iuts_detail"]["taxable_base"] == 232_700
-    assert body["net_salary"] == 347_111
+    # 405 000 − 78 136 exempt − 22 275 CNSS − 75 000 abatement = 229 589 → 229 500
+    # IUTS 34 982 − 10% family reduction 3 498 = 31 484; FSP 1% of 351 241 = 3 512
+    assert body["employee_deductions"] == {"cnss": 22_275, "iuts": 31_484, "fsp": 3_512, "total": 57_271}
+    assert body["iuts_detail"]["exempt_allowances"] == 78_136
+    assert body["iuts_detail"]["taxable_base"] == 229_500
+    assert body["net_salary"] == 347_729
     assert body["employer_liabilities"] == {"cnss": 64_800, "tpa": 12_150, "total": 76_950}
     assert body["total_employer_cost"] == 481_950
     assert body["gross_salary"] - body["employee_deductions"]["total"] == body["net_salary"]

@@ -33,9 +33,16 @@ Example request:
 }
 ```
 
-→ gross 405 000, CNSS 22 275, IUTS 32 108, FSP 3 506, **net 347 111**; employer CNSS 64 800 + TPA 12 150.
+→ gross 405 000, CNSS 22 275, IUTS 31 484, FSP 3 512, **net 347 729**; employer CNSS 64 800 + TPA 12 150.
 
-> The IUTS barème, abatements and allowance exemptions in `config.py` must be validated by a Burkinabè expert-comptable before production use.
+The rules follow the official texts, cited in `config.py`:
+- IUTS and TPA follow the Code général des impôts, DGI edition updated with the 2023 finance law (art. 105–116 and 227–230).
+- Allowance exemptions are shares of base salary plus allowances, minus employee CNSS (art. 106).
+- Employee CNSS is deductible up to 8 % of base salary (art. 111).
+- CNSS rates follow the decree in force since 30 August 2022.
+
+> An expert-comptable still has to confirm them before production use. Open points: the 800 000 FCFA CNSS ceiling,
+> the CNSS deadline, and RAMU health insurance (2.5 % + 2.5 %), which the engine does not calculate yet.
 
 ## Frontend — dashboard (Next.js 14 + Tailwind + Prisma/PostgreSQL)
 

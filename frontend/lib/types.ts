@@ -20,6 +20,8 @@ export interface PayrollResult {
   employee_deductions: { cnss: number; iuts: number; fsp: number; total: number };
   iuts_detail: {
     exempt_allowances: number;
+    /** Employee CNSS deducted from the IUTS base (capped at 8% of base salary). Absent on payslips calculated before it existed. */
+    pension_deduction?: number;
     professional_abatement: number;
     taxable_base: number;
     gross_tax: number;
@@ -61,7 +63,7 @@ export interface DashboardData {
   rows: EmployeePayRow[];
   /** Gross + employer CNSS + TPA across calculated and paid payslips. */
   totalMonthlyOutlay: number;
-  /** DGI/CNSS filing is due on the 15th of the month after the period, ISO date. */
+  /** Earliest filing deadline for the period (IUTS, TPA and FSP: the 10th of the next month), ISO date. */
   nextDeadline: string;
 }
 

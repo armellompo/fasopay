@@ -56,6 +56,7 @@ class PayrollInput(BaseModel):
 
 class IutsBreakdown(BaseModel):
     exempt_allowances: int
+    pension_deduction: int = Field(description="Employee CNSS deducted from the IUTS base, capped at 8% of base salary")
     professional_abatement: int
     taxable_base: int
     gross_tax: int

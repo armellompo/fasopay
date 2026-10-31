@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { TaxAuthority } from "@prisma/client";
+
 import { calculatePayroll } from "./api";
 import { getAuth } from "./auth/context";
 import { prisma } from "./db";
@@ -27,9 +29,15 @@ export async function currentRun(period?: string) {
   return { company, run };
 }
 
-export function filingDeadline(period: string): string {
+/**
+ * Day of the following month each remittance is due. IUTS and TPA: within the first 10 days (CGI art. 116
+ * and 230); FSP goes to the DGI on the IUTS deadline. CNSS: set by decree, not yet confirmed, kept at the 15th.
+ */
+export const FILING_DAY: Record<TaxAuthority, number> = { DGI: 10, FSP: 10, CNSS: 15 };
+
+export function filingDeadline(period: string, authority: TaxAuthority = "DGI"): string {
   const [y, m] = period.split("-").map(Number);
-  return new Date(Date.UTC(y, m, 15)).toISOString().slice(0, 10); // month index m = following month
+  return new Date(Date.UTC(y, m, FILING_DAY[authority])).toISOString().slice(0, 10); // month index m = following month
 }
 
 export async function getDashboard(): Promise<DashboardData | null> {

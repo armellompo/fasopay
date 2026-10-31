@@ -147,7 +147,7 @@ function Bulletin({ d, generatedAt }: { d: PayslipDocData; generatedAt: string }
           <Text style={s.section}>Détail du calcul de l&apos;IUTS</Text>
           <Kv k="Salaire brut" v={d.gross} />
           <Kv k="Indemnités exonérées" v={d.iuts.exempt_allowances} minus />
-          <Kv k="Cotisation CNSS salariale" v={d.cnss.amount} minus />
+          <Kv k="Cotisation CNSS déductible (max. 8 %)" v={d.iuts.pension_deduction ?? d.cnss.amount} minus />
           <Kv k={`Abattement forfaitaire (${pct(d.iuts.abatementRate)})`} v={d.iuts.professional_abatement} minus />
           <Kv k="Base imposable (arrondie à la centaine)" v={d.iuts.taxable_base} strong />
           <Kv k="IUTS selon barème" v={d.iuts.gross_tax} />

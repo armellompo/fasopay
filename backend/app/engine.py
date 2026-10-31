@@ -59,21 +59,36 @@ def tpa(gross: Decimal) -> Decimal:
 
 # --- IUTS -------------------------------------------------------------------
 
-def _capped_exemption(amount: Decimal, base_salary: Decimal, rule: tuple[Decimal, Decimal]) -> Decimal:
-    """Exempt part of one allowance: ``min(amount, share × base, absolute cap)``."""
+def exemption_reference(
+    base_salary: Decimal, allowances_total: Decimal, employee_contributions: Decimal
+) -> Decimal:
+    """The "salaire brut" the exemption shares apply to (CGI art. 106): base salary
+    plus allowances, less employee social contributions. Bonuses are left out because
+    the article names only the base salary and allowances."""
+    return max(base_salary + allowances_total - employee_contributions, ZERO)
+
+
+def _capped_exemption(amount: Decimal, reference: Decimal, rule: tuple[Decimal, Decimal]) -> Decimal:
+    """Exempt part of one allowance: ``min(amount, share × reference salary, absolute cap)``."""
     share, cap = rule
-    return min(amount, base_salary * share, cap)
+    return min(amount, reference * share, cap)
 
 
 def exempt_allowances(
-    base_salary: Decimal, housing: Decimal, transport: Decimal, function: Decimal
+    reference: Decimal, housing: Decimal, transport: Decimal, function: Decimal
 ) -> Decimal:
     """Sum of IUTS-exempt allowance portions (housing, transport, function)."""
     return round_fcfa(
-        _capped_exemption(housing, base_salary, c.HOUSING_EXEMPTION)
-        + _capped_exemption(transport, base_salary, c.TRANSPORT_EXEMPTION)
-        + _capped_exemption(function, base_salary, c.FUNCTION_EXEMPTION)
+        _capped_exemption(housing, reference, c.HOUSING_EXEMPTION)
+        + _capped_exemption(transport, reference, c.TRANSPORT_EXEMPTION)
+        + _capped_exemption(function, reference, c.FUNCTION_EXEMPTION)
     )
+
+
+def pension_deduction(employee_cnss: Decimal, base_salary: Decimal) -> Decimal:
+    """Employee pension contribution deductible from the IUTS base, capped at
+    8% of base salary (CGI art. 111). The CNSS employee share is all pension."""
+    return min(employee_cnss, round_fcfa(_non_negative(base_salary) * c.IUTS_PENSION_DEDUCTION_CAP))
 
 
 def professional_abatement(base_salary: Decimal, is_executive: bool) -> Decimal:
@@ -83,11 +98,11 @@ def professional_abatement(base_salary: Decimal, is_executive: bool) -> Decimal:
 
 
 def iuts_taxable_base(
-    gross: Decimal, exempt: Decimal, employee_cnss: Decimal, abatement: Decimal
+    gross: Decimal, exempt: Decimal, pension: Decimal, abatement: Decimal
 ) -> Decimal:
-    """``gross − exempt allowances − employee CNSS − abatement``, floored at 0
+    """``gross − exempt allowances − pension deduction − abatement``, floored at 0
     and truncated down to the nearest 100 FCFA."""
-    raw = max(gross - exempt - employee_cnss - abatement, ZERO)
+    raw = max(gross - exempt - pension - abatement, ZERO)
     step = c.IUTS_BASE_ROUNDING
     return (raw / step).to_integral_value(rounding=ROUND_DOWN) * step
 
@@ -133,7 +148,9 @@ def calculate_payroll(data: PayrollInput) -> PayrollResult:
 
     1. gross = base + bonuses + allowances
     2. employee CNSS / employer CNSS on min(gross, 800 000)
-    3. IUTS on (gross − exempt allowances − employee CNSS − abatement), less family reduction
+    3. IUTS on (gross − exempt allowances − pension deduction − abatement), less family reduction;
+       exemptions are shares of (base + allowances − employee CNSS), the pension deduction is
+       employee CNSS capped at 8% of base salary
     4. FSP = 1% × (gross − employee CNSS − IUTS)
     5. net = gross − CNSS − IUTS − FSP; employer cost = gross + employer CNSS + TPA
     """
@@ -141,9 +158,11 @@ def calculate_payroll(data: PayrollInput) -> PayrollResult:
     a = data.allowances
 
     emp_cnss = cnss_employee(gross)
-    exempt = exempt_allowances(data.base_salary, a.housing, a.transport, a.function)
+    reference = exemption_reference(data.base_salary, a.total, emp_cnss)
+    exempt = exempt_allowances(reference, a.housing, a.transport, a.function)
+    pension = pension_deduction(emp_cnss, data.base_salary)
     abatement = professional_abatement(data.base_salary, data.is_executive)
-    taxable = iuts_taxable_base(gross, exempt, emp_cnss, abatement)
+    taxable = iuts_taxable_base(gross, exempt, pension, abatement)
     gross_tax = iuts_progressive(taxable)
     reduction = iuts_family_reduction(gross_tax, data.dependents)
     iuts = gross_tax - reduction
@@ -165,6 +184,7 @@ def calculate_payroll(data: PayrollInput) -> PayrollResult:
         ),
         iuts_detail=IutsBreakdown(
             exempt_allowances=int(exempt),
+            pension_deduction=int(pension),
             professional_abatement=int(abatement),
             taxable_base=int(taxable),
             gross_tax=int(gross_tax),
